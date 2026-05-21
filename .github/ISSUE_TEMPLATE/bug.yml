@@ -1,0 +1,77 @@
+name: Bug report
+description: Something in Rekk is broken or not behaving as documented.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please fill in as much as you can — the more concrete the repro, the faster it gets fixed.
+
+  - type: input
+    id: rekk-version
+    attributes:
+      label: Rekk version
+      description: Found in the topbar (e.g. `0.1.0`) or in `Cargo.toml`.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      description: Output of `sw_vers -productVersion`.
+      placeholder: "14.4.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: hardware
+    attributes:
+      label: Hardware
+      options:
+        - Apple Silicon (M1 / M2 / M3 / M4)
+        - Intel
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what did you see instead?
+      placeholder: |
+        1. Open Rekk
+        2. Press record
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-text
+    attributes:
+      label: Error message / toast text
+      description: |
+        Paste the toast banner or, if the app crashes at launch, the stderr from
+        `/Applications/Rekk.app/Contents/MacOS/rekk` run from a terminal.
+      render: shell
+
+  - type: checkboxes
+    id: feature-area
+    attributes:
+      label: Which area is affected?
+      options:
+        - label: Recording (mic / system audio)
+        - label: Acoustic Echo Cancellation
+        - label: Whisper transcription
+        - label: Model download
+        - label: UI / window / drawer
+        - label: macOS permissions / Gatekeeper
+        - label: Build from source
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Logs, screenshots, hunches, links to related issues.

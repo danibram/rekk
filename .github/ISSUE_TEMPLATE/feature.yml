@@ -1,0 +1,42 @@
+name: Feature request
+description: Propose a new capability or improvement.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Rekk has an intentionally small surface (record → mix → transcribe locally). Proposals that align with that focus get triaged faster.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the user-facing pain — not the implementation you have in mind.
+      placeholder: |
+        Right now when I X, I have to do Y manually...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should change? UI, behaviour, command, setting?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other ways to address the same problem, and why this is preferred.
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: I'm willing to implement this myself
+        - label: This requires a new dependency
+        - label: This requires changes to the bundle / signing / distribution
