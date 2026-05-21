@@ -1,0 +1,6 @@
+.stage {
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  font-family: ui-monospace, monospace;
+}

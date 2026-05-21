@@ -1,0 +1,10 @@
+[env]
+# whisper.cpp uses C++17 std::filesystem which requires macOS 10.15+.
+# Tauri's default deployment target is 10.13 which breaks the build.
+# Set 11.0 to match our minimum (Apple Silicon only exists on 11+ anyway).
+# MACOSX_DEPLOYMENT_TARGET drives clang -mmacosx-version-min.
+# CMAKE_OSX_DEPLOYMENT_TARGET overrides CMake's hardcoded 10.13 default which
+# the cmake-rs crate would otherwise inject as the trailing -mmacosx-version-min
+# flag and "last flag wins" on clang.
+MACOSX_DEPLOYMENT_TARGET = "11.0"
+CMAKE_OSX_DEPLOYMENT_TARGET = "11.0"

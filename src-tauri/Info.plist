@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Rek necesita acceso al microfono para grabar audio junto con la salida del ordenador.</string>
+  <key>NSScreenCaptureUsageDescription</key>
+  <string>Rek necesita el permiso de Grabacion de Pantalla para capturar el audio del sistema mediante ScreenCaptureKit. No se guarda ni se transmite ninguna imagen de la pantalla.</string>
+</dict>
+</plist>
