@@ -29,6 +29,9 @@ mod system_audio;
 #[cfg(target_os = "macos")]
 use system_audio::SystemAudioCapture;
 
+#[cfg(target_os = "macos")]
+mod whisper;
+
 const TARGET_SAMPLE_RATE: u32 = 48_000;
 
 type SharedWriter = Arc<Mutex<Option<hound::WavWriter<BufWriter<File>>>>>;
@@ -354,6 +357,60 @@ fn set_aec_enabled(enabled: bool) {
 fn set_aec_enabled(_enabled: bool) {}
 
 #[cfg(target_os = "macos")]
+#[tauri::command]
+async fn transcribe_recording(
+    app: AppHandle,
+    path: String,
+    model: Option<String>,
+    language: Option<String>,
+) -> Result<whisper::TranscriptResult, String> {
+    let audio_path = PathBuf::from(&path);
+    if !audio_path.exists() {
+        return Err("Audio file does not exist".to_string());
+    }
+    let model_id = model.unwrap_or_else(|| "small".to_string());
+    let lang = language.unwrap_or_else(|| "auto".to_string());
+
+    // whisper.cpp inference is heavy CPU/GPU work; running it on the Tauri
+    // async runtime would block IPC dispatch and trigger the macOS beachball.
+    // Offload to a dedicated blocking thread so events keep flowing.
+    tauri::async_runtime::spawn_blocking(move || {
+        whisper::transcribe(&app, &audio_path, &model_id, &lang)
+    })
+    .await
+    .map_err(|err| format!("Transcribe task panicked: {err}"))?
+}
+
+#[cfg(not(target_os = "macos"))]
+#[tauri::command]
+fn transcribe_recording(
+    _app: AppHandle,
+    _path: String,
+    _model: Option<String>,
+    _language: Option<String>,
+) -> Result<(), String> {
+    Err("Transcription is only available on macOS in this build".to_string())
+}
+
+#[cfg(target_os = "macos")]
+#[tauri::command]
+fn available_models() -> Result<Vec<whisper::ModelStatus>, String> {
+    whisper::model_statuses()
+}
+
+#[cfg(target_os = "macos")]
+#[tauri::command]
+fn download_model(app: AppHandle, model_id: String) -> Result<(), String> {
+    whisper::download_model(&app, &model_id)
+}
+
+#[cfg(target_os = "macos")]
+#[tauri::command]
+fn cancel_model_download() {
+    whisper::cancel_download();
+}
+
+#[cfg(target_os = "macos")]
 fn run_tccutil_reset() {
     // Resets TCC entries for our bundle id so that stale "phantom" toggles
     // (from previous rebuilds with different code signatures) don't block us.
@@ -432,6 +489,10 @@ fn setup_status() -> Result<SetupStatus, String> {
     Ok(SetupStatus {
         mic_permission: mic_permission_string(),
         screen_permission: screen_permission_string(),
+        models_dir: whisper::models_dir()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default(),
+        models: whisper::model_statuses().unwrap_or_default(),
     })
 }
 
@@ -440,6 +501,8 @@ fn setup_status() -> Result<SetupStatus, String> {
 struct SetupStatus {
     mic_permission: String,
     screen_permission: String,
+    models_dir: String,
+    models: Vec<whisper::ModelStatus>,
 }
 
 #[cfg(target_os = "macos")]
@@ -904,11 +967,15 @@ pub fn run() {
             resume_recording,
             set_mix_gates,
             set_aec_enabled,
+            transcribe_recording,
             list_recordings,
             read_transcript,
             delete_recording,
             open_recordings_dir,
             reveal_recording,
+            available_models,
+            download_model,
+            cancel_model_download,
             setup_status,
             reset_permissions,
             open_privacy_settings,
