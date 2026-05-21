@@ -1,0 +1,53 @@
+# git-cliff configuration
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+header = """
+# Changelog
+
+All notable changes to this project are documented here.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+"""
+body = """
+{% if version -%}
+## [{{ version | trim_start_matches(pat="v") }}]\
+{%- if previous and previous.version -%}\
+(https://github.com/danibram/rekk/compare/{{ previous.version }}...{{ version }})\
+{%- else -%}\
+(https://github.com/danibram/rekk/releases/tag/{{ version }})\
+{%- endif %} - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else -%}
+## [Unreleased]
+{% endif %}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | upper_first }}
+{% for commit in commits -%}
+- {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }}\
+{% if commit.id %} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/danibram/rekk/commit/{{ commit.id }})){% endif %}
+{% endfor %}
+{% endfor %}
+"""
+trim = true
+footer = ""
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+commit_parsers = [
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Bug fixes" },
+  { message = "^perf", group = "Performance" },
+  { message = "^refactor", group = "Refactor" },
+  { message = "^docs", group = "Documentation" },
+  { message = "^ci", group = "CI" },
+  { message = "^build", group = "Build" },
+  { message = "^chore\\(release\\)", skip = true },
+  { message = "^chore", group = "Chores" },
+  { message = "^revert", group = "Reverts" },
+  { message = ".*", skip = true },
+]
+filter_commits = true
+tag_pattern = "v[0-9].*"
+sort_commits = "newest"
