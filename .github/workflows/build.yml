@@ -1,0 +1,82 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # macos-15 runner with Xcode 26 selected explicitly: apple-metal 0.8.6
+    # (transitive via screencapturekit) references macOS 26 Metal symbols
+    # (MTLSamplerReductionMode, reductionMode, lodBias) that only exist
+    # in the macOS 26 SDK. Xcode 16 also miscompiles whisper.cpp's i8mm
+    # intrinsics on the CI host CPU; Xcode 26's clang gates them correctly.
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)/Contents/Developer"
+
+      - name: Install system dependencies
+        run: |
+          brew install cmake meson ninja
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry & target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Type-check frontend
+        run: npx tsc --noEmit
+
+      - name: Build Tauri app
+        run: npm run tauri build
+
+      - name: Upload .app artifact
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rekk-macos-aarch64
+          path: |
+            src-tauri/target/release/bundle/macos/Rekk.app
+            src-tauri/target/release/bundle/dmg/Rekk_*.dmg
+          if-no-files-found: error
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src-tauri/target/release/bundle/dmg/Rekk_*.dmg
+          generate_release_notes: true
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
