@@ -4,6 +4,8 @@ A tiny macOS audio recorder that captures your microphone **and** the system aud
 
 ![Rekk](./design-reference/screenshots/rekk.png)
 
+![Rekk · setup & diagnostics](./design-reference/screenshots/rekk-setup.png)
+
 ## What it does
 
 - **Mic + system audio in one WAV**. ScreenCaptureKit taps the system output natively; no virtual audio driver, no BlackHole / Loopback dance.
